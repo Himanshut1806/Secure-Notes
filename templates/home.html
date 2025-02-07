@@ -1,0 +1,164 @@
+{% extends 'layout.html' %}
+{% load static %}
+{% block body %}
+<div class="container mt-3">
+    <h2 class="text-center">{{ request.user.username }} - {{ request.user.email }}</h2>
+    <hr>
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="mx-auto border rounded p-3">
+                <h3 class="pt-3 pb-4 text-center">Add Your Notes Here</h3>
+                <p class="text-white" id="message"></p>
+                <form id="noteForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="Title1" class="form-label">Title*</label>
+                        <input type="hidden" name="id" id="id">
+                        <input type="text" class="form-control" id="Title1" name="Title1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="Description1" class="form-label">Description*</label>
+                        <input type="text" class="form-control" id="Description1" name="Description1" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success" id="add">Add Notes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="col-lg-6 mt-3 mt-lg-0">
+            <div class="mx-auto border rounded p-3">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="notesTable">
+                        <thead>
+                            <tr>
+                                <th>S.no.</th>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Edit</th>
+                                <th>Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for note in notes %}
+                            <tr>
+                                <th scope="row">{{ forloop.counter }}</th>
+                                <td class="title">{{ note.title }}</td>
+                                <td class="description">{{ note.description }}</td>
+                                <td><button data="{{ note.id }}" class="btn btn-primary btn-sm edit">Edit</button>
+                                </td>
+                                <td><button data="{{ note.id }}" class="btn btn-danger btn-sm delete">Delete</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+<script src="https://code.jquery.com/jquery-3.7.1.js"
+    integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+<script type="text/javascript" charset="utf8"
+    src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+
+<script>
+    $(document).ready(function () {  // This is a JQuery function that ensure the code inside th function will execute only after Document object model is fully loaded. 
+        $('#notesTable').DataTable({  
+          responsive: true, // Enable responsiveness
+          "paging": true,   // Enable pagination
+          "ordering": true, // Enable sorting
+          "info": true      // Enable information display
+        });
+    });
+
+    // Show function
+    function showNote(notes) {     // Defines a function named show note that taken an array of notes as input 
+        $('#notesTable tbody').empty(); // Clear the table before adding new data
+        notes.forEach(function (note, index) {
+            $('#notesTable tbody').append(    // Appends a new table row (tr) to the <tbody> of the 'notestable' for each note in the notes array.
+                `<tr>
+                    <th scope="row">${index + 1}</th>             <!-- Use index for serial number -->
+                    <td class='title'>${note.title}</td>               
+                    <td class='description'>${note.description}</td> 
+                    <td><button data="${note.id}" class='btn btn-primary btn-sm edit'>Edit</button></td>
+                    <td><button data="${note.id}" class='btn btn-danger btn-sm delete'>Delete</button></td>
+                </tr>`
+            );
+        });
+    }
+
+    // Edit function
+    function editItem(item) {
+        var title = item.find('.title').text();    //Finds the element wit hthe class 'title' within the 'item' and extracts its content storing it in the title variable.
+        var description = item.find('.description').text();
+        var edit_id = item.find('.edit').attr('data');
+
+        $('#Title1').val(title);  // Select the HTML element with the ID Title1 and set its value to title extract from table row.
+        $('#Description1').val(description);
+        $('#id').val(edit_id); // Set the hidden input value
+        $('#add').text('Update Note');
+        $('#add').removeClass('btn-success').addClass('btn-info');
+    }
+
+    // Delete note function
+    function deleteNote(delete_id) {
+        $.ajax({           // This is a jQuery function that perofrms an asynchronous HTTP request (AJAX). 
+            type: 'GET',   // Specifies that the HTTP request method is GET.
+            url: "{% url 'DeleteNote' %}",   
+            data: {        // Specifies the data to be sent to the server.
+                "delete_id": delete_id,
+            },
+            success: function (response) {  // Defines a callback function that will be executed if the AJAX request is successful.
+                showNote(response.notes); // The response parameter containes the data returned from the server.
+            },
+            error: function (xhr, status, error) {   // Defines a callback function that will be executed if the AJAX request fails.
+                console.error('Error occurred while deleting:', error);
+            }
+        });
+    }
+
+    // Form submission
+    $(document).on('submit', '#noteForm', function (e) {  // This means that when the from us submitted , the function inside will be executed.
+        e.preventDefault();   // Prevents the default for msubmission behaviour, which would typically cause the page to reload. Using AJAX t ohandle this form submission. 
+        var id = $("#id").val(); // Retrieves the value from the HTML element with the ID and stores it in the id variables. 
+        var title = $('#Title1').val(); // Retrieves the vlaue from the HTML element wit hthe ID Title1 and stores it in the title variable. 
+        var description = $('#Description1').val();
+
+        // AJAX call
+        $.ajax({
+            type: 'POST',
+            url: '/',
+            data: {
+                'id': id,
+                'Title1': title,
+                'Description1': description,
+                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+            },
+            success: function (response) {
+                console.log(response.status);  // This is likely a message from the server indicating the success or failure of the operation.
+                showNote(response.notes); // Update the table with new notes
+                $('#noteForm').trigger("reset");   //Resets the form to its initial state, clearing all the input fields. 
+                $('#message').text(response.status).addClass('bg-success p-2');
+                $('#add').text('Add Notes');
+                $('#add').removeClass('btn-info').addClass('btn-success');
+            },
+            error: function (xhr, status, error) {
+                console.error('Error occurred:', error);
+            }
+        });
+    });
+
+    $(document).on('click', '.edit', function () {  // Attaches a click event listner to all elements with the class edit.
+        var item = $(this).closest('tr');   // When the edit button is clicked, this line finds the closest parent <tr> element to the clicked button 
+        editItem(item);
+    });
+
+    $(document).on('click', '.delete', function () {
+        var delete_id = $(this).attr('data');
+        deleteNote(delete_id);
+    });
+</script>
+{% endblock %}

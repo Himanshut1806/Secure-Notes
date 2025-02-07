@@ -1,0 +1,84 @@
+{% extends 'layout.html' %}
+{% block body %}
+<div class="container my-3 p-3 rounded col-md-6 col-lg-4">
+    <form method="POST" id="signupForm">
+        {% csrf_token %}
+        <h4 class="mb-3 text-center">Signup Form</h4>
+        <div class="mb-3">
+            <label for="Name1" class="form-label">Name*</label>
+            <input type="text" class="form-control" id="Name1" name="Name1" aria-describedby="Name1Help" required>
+        </div>
+        <div class="mb-3">
+            <label for="Username1" class="form-label">UserName*</label>
+            <input type="text" class="form-control" id="Username1" name="Username1NameAttr"
+                aria-describedby="Username1Help" required>
+        </div>
+        <div class="mb-3">
+            <label for="Email1" class="form-label">Email*</label>
+            <input type="email" class="form-control" id="Email1" name="Email1" aria-describedby="emailHelp" required>
+        </div>
+        <div class="mb-3">
+            <label for="Password1" class="form-label">Password*</label>
+            <input type="password" class="form-control" id="Password1" name="Password1" required>
+            <span id="pass" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label for="Confirmpassword1" class="form-label">Confirm Password*</label>
+            <input type="password" class="form-control" id="Confirmpassword1" name="Confirmpassword1" required>
+        </div>
+        <div class="d-grid gap-2">
+            <button type="button" class="btn btn-success" id="submitBtn">Signup</button>
+            <a href="/" class="btn btn-outline-secondary">Login</a>
+        </div>
+    </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.js"
+    integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous">
+    </script>
+
+<script>
+    $(document).ready(function () {  //Wrap your jQuery code inside $(document).ready()
+
+        $('#submitBtn').on('click', function (e) {
+            e.preventDefault(); // Prevent default form submission
+
+            var name = $('#Name1').val();
+            var username = $('input[name=Username1NameAttr]').val();
+            var email = $('#Email1').val();
+            var password = $('#Password1').val();
+            var confirmPassword = $('#Confirmpassword1').val();
+
+            if (password !== confirmPassword) {
+                $('#pass').text("Passwords do not match");
+                return; // Stop further execution
+            } else {
+                $('#pass').text(""); // Clear previous error message if passwords match
+            }
+
+            // AJAX call
+            $.ajax({
+                type: 'POST',
+                url: '/signup/',
+                data: {
+                    Name1: name,
+                    Username1: username,
+                    Email1: email,
+                    Password1: password,
+                    Confirmpassword1: confirmPassword,
+                    csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+                },
+                success: function (response) {
+                    console.log(response);
+                    window.location.href = "{% url 'Login' %}"  //Correct way to redirect in Django templates with Javascript
+                    // Handle success response here
+                },
+                error: function (xhr, status, error) {
+                    console.error(xhr.responseText); // Handle errors here
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}

@@ -41,7 +41,7 @@
     $(document).ready(function () {  //Wrap your jQuery code inside $(document).ready()
 
         $('#submitBtn').on('click', function (e) {
-            e.preventDefault(); // Prevent default form submission
+            e.preventDefault(); // Prevent default form submission. This is used to not reload the page.
 
             var name = $('#Name1').val();
             var username = $('input[name=Username1NameAttr]').val();
